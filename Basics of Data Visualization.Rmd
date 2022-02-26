@@ -1,0 +1,94 @@
+---
+title: "Basic Data Visualization"
+author: "Md Johirul Islam"
+date: "2/26/2022"
+output: html_document
+---
+
+```{r library}
+library(tidyverse)
+library(socviz)
+```
+
+## We will use "gapminder" library for the datasets. At first, we need to
+install it, and then load it to the console. 
+
+```{r gapminder}
+
+library(gapminder)
+
+gapminder #load the dataset
+
+```
+
+*Make a scatterplot*
+```{r scatterplot}
+p <- ggplot(data = gapminder, 
+            mapping = aes(x = gdpPercap, y = lifeExp))
+p + geom_point()
+
+```
+
+*More details of ggplot*
+
+#In ggplot, the overall type of plot is called a geom. Each geom has a 
+function that creates it. For example, geom_point() makes scatterplots,
+geom_bar() makes barplots, geom_boxplot() makes boxplots, and so on. 
+You combine these two pieces, the ggplot() object and the geom, 
+by literally adding them together in an expression, using the “+” symbol.
+
+# In ggplot, mappings are specified using the aes() function.
+
+*we include coordinates and scales by "coord_cartesian()" and " scale_x_log10()"*
+
+#Lables and guides
+
+```{r labs and guides}
+p + labs(x ="Log GDP",
+         y = "Life Expectancy",
+         title = "A Gapminder plot")
+```
+
+
+
+*Build your plots layer by layer*
+
+#Steps:
+1. Tell the ggplot() function what our data is.         The data = … step.
+2. Tell ggplot() what relationships we want to see.     The mapping = aes(…) step.
+For convenience we will put the results of the 
+first two steps in an object called p.
+3. Tell ggplot how we want to see the relationships in our data.Choose a geom. 
+4. Layer on geoms as needed, by adding them to the p object one at a time.
+5. Use some additional functions to adjust scales, labels, tick marks, titles. We’ll learn more about some of these functions shortly.             The scale_, family, labs() and                                                             guides() functions. 
+
+```{r geom smoother}
+p + geom_smooth()   #use smoother graph
+
+#use both scatterplot and smoother
+p + geom_point() + geom_smooth()
+
+
+```
+
+```{r geom smooth for OLS}
+p + geom_point() + geom_smooth(method = "lm")
+```
+
+#to make GDP normally distributed, we can scale the x-axis by taking log
+
+```{r scaling x }
+p + geom_point() + geom_smooth(method = "gam") + 
+  scale_x_log10()
+
+#we want top labell x-axis with dollar value, then
+p + geom_point() + geom_smooth(method = "lm") + 
+  scale_x_log10(labels = scales::dollar) #we use "::" to extract a function 
+                                          #from a library not loaded.
+
+
+```
+ 
+
+
+
