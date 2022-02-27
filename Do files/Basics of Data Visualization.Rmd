@@ -1,0 +1,216 @@
+---
+title: "Basic Data Visualization with ggplot"
+author: "Md Johirul Islam"
+date: "2/26/2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r library}
+library(tidyverse)
+library(socviz)
+```
+
+We will use "gapminder" library for the datasets. At first, we need to
+install it, and then load it to the console. 
+
+```{r gapminder}
+
+library(gapminder)
+
+gapminder #load the dataset
+
+```
+
+*Make a scatterplot*
+```{r scatterplot}
+p <- ggplot(data = gapminder, 
+            mapping = aes(x = gdpPercap, y = lifeExp))
+p + geom_point()
+
+```
+
+*More details of ggplot*
+
+#In ggplot, the overall type of plot is called a geom. Each geom has a 
+function that creates it. For example, geom_point() makes scatterplots,
+geom_bar() makes barplots, geom_boxplot() makes boxplots, and so on. 
+You combine these two pieces, the ggplot() object and the geom, 
+by literally adding them together in an expression, using the '+' symbol.
+
+# In ggplot, mappings are specified using the aes() function.
+
+*we include coordinates and scales by "coord_cartesian()" and " scale_x_log10()"*
+
+#Lables and guides
+
+```{r labs and guides}
+p + labs(x ="Log GDP",
+         y = "Life Expectancy",
+         title = "A Gapminder plot")
+```
+
+
+
+*Build your plots layer by layer*
+
+#Steps:
+1. Tell the ggplot() function what our data is.         
+2. Tell ggplot() what relationships we want to see.     
+For convenience we will put the results of the 
+first two steps in an object called p.
+3. Tell ggplot how we want to see the relationships in our data.Choose a geom. 
+4. Layer on geoms as needed, by adding them to the p object one at a time.
+5. Use some additional functions to adjust scales, labels, tick marks, titles. We will learn more about some of these functions shortly.             
+
+```{r geom smoother}
+p + geom_smooth()   #use smoother graph
+
+#use both scatterplot and smoother
+p + geom_point() + geom_smooth()
+```
+
+```{r geom smooth for OLS}
+p + geom_point() + geom_smooth(method = "lm")
+```
+
+#to make GDP normally distributed, we can scale the x-axis by taking log
+
+```{r scaling x }
+p + geom_point() + geom_smooth(method = "gam") + 
+  scale_x_log10()
+
+#we want top labell x-axis with dollar value, then
+p + geom_point() + geom_smooth(method = "lm") + 
+  scale_x_log10(labels = scales::dollar) #we use "::" to extract a function 
+                                          #from a library not loaded.
+```
+ 
+
+#Mapping aesthetics vs. Settings them.#
+
+Suppose, we want to set color. We do based on a categorical variable. 
+
+```{r color setting by variable continent}
+
+p <- ggplot(data = gapminder,
+            mapping = aes(x = gdpPercap,
+                          y = lifeExp,
+                          color = continent))  #will color based on "continent"
+p + geom_point() +
+    geom_smooth(method = "loess") +
+    scale_x_log10(labels = scales::dollar)
+```
+*Mapping the continent variable to the color aesthetic,*
+*and correcting the error bars using the fill aesthetic.*
+
+```{r correction for fill aesthetic}
+p<- ggplot(data = gapminder, 
+            mapping = aes(x  = gdpPercap,
+                          y = lifeExp,
+                          color = continent,
+                          fill = continent))
+p + geom_point() + 
+    geom_smooth(method = "loess") +
+    scale_x_log10(labels = scales::dollar)
+
+```
+
+
+
+
+If we want to color all points, we do the following: 
+
+```{r color all points}
+p <- ggplot(data = gapminder,
+            mapping = aes(x = gdpPercap,
+                          y = lifeExp,
+                          color = "purple")) #aes fn thinks purple as a variable
+                                            #hence, it will create a new colum.
+p + geom_point() +
+    geom_smooth(method = "loess") +
+    scale_x_log10()
+
+```
+The aes() function is for mappings only. Do not use it to change properties to a particular value. If we want to set a property, we do it in the geom_ we are using, and outside the mapping = aes(...) step. Try this:
+
+*so for color, we use "geom_point", not aes in mapping*
+
+```{r color with geom}
+ p <- ggplot(data = gapminder, 
+             mapping = aes(x = gdpPercap,
+                           y = lifeExp))
+p + geom_point(color = "purple") + 
+    geom_smooth(method = "loess") + 
+    scale_x_log10(labels = scales::dollar)
+```
+
+To set the color and size of the line, we use "geom_smooth" fn. 
+```{r color and size of ols}
+p + geom_point(alpha = 0.3) + #alpha controls the opacity of all points. 
+  geom_smooth(color = "yellow",
+              se  = F, #meaning that standard error is not known
+              size = 3,
+              method = "lm") + 
+  scale_x_log10(labels = scales::dollar)
+```
+
+Let us make the complete graph with title, subtitle, caption. 
+```{r complete graph}
+ p <- ggplot(data = gapminder, 
+             mapping = aes(x = gdpPercap,
+                           y = lifeExp))
+
+p + geom_point(alpha = 0.3, color = "purple") + 
+    geom_smooth(color  = "red", size = 3, se = F, method = "lm") + 
+    scale_x_log10(labels = scales::dollar) + 
+    labs( x = "GDP per capita", y = "Life Expectancy",
+          title = "Economic growth vs. Life Expectancy", 
+          subtitle = "Data points are country-years", 
+          caption = "Source: Gapminder")
+```
+
+
+
+**Aesthetics can be mapped per geom**
+
+If we want one line, but need all points colored based on "continent". We use
+"geom_point" fn. 
+
+```{r one line, but colored points by continent}
+p <- ggplot(data = gapminder,
+            mapping = aes(x = gdpPercap,
+                          y = lifeExp))
+p + geom_point(mapping = aes(color = continent)) + 
+    geom_smooth(method = "loess") + 
+    scale_x_log10(labels = scales::dollar)
+```
+*Mapping a continuous variable to color.*
+We can mapped a continuous variable such as "population" as follows: 
+
+```{r mapping continous variable, fig.width = 9, fig.height = 9} 
+p <- ggplot(data = gapminder,
+            mapping = aes(x = gdpPercap,
+                          y = lifeExp))
+p + geom_point(mapping = aes(color = log(pop))) + 
+    scale_x_log10(labels = scales::dollar) 
+#save the single figure
+ggsave(filename = "Mapping continuousV.png") #will save the file in png
+
+```
+
+*Save your work* 
+
+You can also pass plot objects to ggsave(). For example, we can put our recent plot into an object called p_out and then tell ggave() that we want to save that object.
+
+```{r using ggsave for direct object}
+p_out <- p + geom_point() +
+    geom_smooth(method = "loess") +
+    scale_x_log10()
+
+ggsave("my_figure.pdf", plot = p_out)
+
+```
+
+
