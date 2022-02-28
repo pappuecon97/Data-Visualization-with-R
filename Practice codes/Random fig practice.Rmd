@@ -1,0 +1,28 @@
+---
+title: "Random Fig"
+author: "Md Johirul Islam"
+date: "2/28/2022"
+output: html_document
+---
+
+
+
+```{r figure, fig.height=6, fig.width=25}
+p <- ggplot(data = gapminder, 
+            mapping = aes(x = gdpPercap,
+                          y = lifeExp,
+                          color = country,
+                          fill = country))
+
+p + geom_point() + 
+  geom_smooth(method = "lm") + 
+  scale_x_log10(labels = scales::dollar) + 
+  labs( x = "GDP per capita", y = "Life Expectancy",
+        title = "Economic growth vs. Life Expectancy", 
+        subtitle = "Data points are country-years", 
+        caption = "Source: Gapminder")
+
+#save
+ggsave(filename = "Country-level.pdf", height = 6, width = 25 )
+```
+
