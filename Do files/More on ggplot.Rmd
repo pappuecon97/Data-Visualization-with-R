@@ -1,0 +1,161 @@
+---
+title: "More on ggplot"
+author: "Md Johirul Islam"
+date: "2/28/2022"
+output: html_document
+---
+
+**Grouped data and the group aesthetic**
+
+First, we need to load libraries
+```{r load required libraries}
+library(tidyverse)
+library(socviz)
+library(gapminder)
+
+#load the data
+gapminder
+```
+
+We can draw geom_line to show the trajectory of life expectancy. 
+
+```{r drawing geom_line}
+p<- ggplot(data = gapminder,
+           mapping = aes(x = year,
+                         y = lifeExp))
+p+ geom_line()
+```
+Something bizarre happens. Here, we can use the group aesthetic to tell ggplot explicitly about this country-level structure.
+```{r group year by country}
+p <- ggplot(data = gapminder,
+            mapping = aes(x = year,
+                          y = lifeExp))
+p + geom_line(aes(group = country))
+```
+*The group aesthetic is usually only needed when the grouping information you need to tell ggplot about is not built-in to the variables being mapped. For example, when we were plotting the points by continent, mapping color to continent was enough to get the right answer, because continent is already a categorical variable, so the grouping is clear. When mapping the x to year, however, there is no information in the year variable itself to let ggplot know that it is grouped by country for the purposes of drawing lines with it. So we need to say that explicitly.*
+
+
+**Facet to make small multiples**
+
+ We will use facet_wrap() to split our plot by a categorical variable since the
+ plot looks messy. In this case, we split our plot by continent. 
+ 
+```{r split plot by facet_wrap fn}
+p<- ggplot(data = gapminder,
+           mapping = aes(x = year,
+                         y = lifeExp))
+p + geom_line(aes(group = country)) + facet_wrap(~ continent)
+
+```
+*We can also use the ncol argument to facet_wrap() to control the number of columns used to lay out the facets. Because we have only five continents it might be worth seeing if we can fit them on a single row (which means we’ll have five columns)*
+
+So, full figure is as follows: 
+
+```{r complete figure, fig.height=8, fig.width=25}
+p <- ggplot(data = gapminder,
+            mapping = aes(x = year,
+                          y = lifeExp,
+                          color = continent,
+                          fill = continent))
+p+ geom_line(aes(group = country), color = "grey70") + 
+  geom_smooth(method = "loess", size = 1.1, se = F) + 
+  scale_y_log10() + 
+  facet_wrap(~ continent, ncol = 5) + 
+  labs(x = "Year",
+       y = "Life Expectancy",
+       title = "Life Expectancy on five continents")
+
+```
+*Facets can be more complex than this. For instance, you might want to cross-classify some data by two categorical variables. In that case you should try facet_grid() instead.*
+
+
+
+**Faceting on two categorical variables.**
+Here, we will use gss_sm dataset.
+
+```{r load data}
+gss_sm
+
+#get a glimpse of the data
+glimpse(gss_sm)
+
+```
+We use R's formula notation in the facet_grid function to facet sex and race. This time, because we are cross-classifying our results, the formula is two-sided: facet_grid(sex ~ race).
+
+```{r facet for two categorical variable}
+p <- ggplot(data = gss_sm,
+            mapping = aes(x = age, y = childs))
+p + geom_point(alpha = 0.2) +
+    geom_smooth() +
+    facet_grid(sex ~ race)
+
+```
+*We are not limited to two-way comparison. Further categorical variables can be added to the formula, too, (e.g. sex ~ race + degree) for more complex multi-way plots*
+
+
+
+#Geoms can transform data#
+
+To transfrom data we use stat_smooth fn.
+
+**A bar chart.**
+We plot bar chart by geom_bar fn. 
+```{r bar chart}
+p <- ggplot(data = gss_sm,
+            mapping = aes(x = bigregion))
+
+p + geom_bar()
+
+```
+This bar chart gives the count on the vertical axis. Suppose, we want frequency 
+rather than count.
+
+*If we want a chart of relative frequencies rather than counts, we will need to get the prop statistic instead. When ggplot calculates the count or the proportion, it returns temporary variables that we can use as mappings in our plots. The relevant statistic is called ..prop.. rather than prop. To make sure these temporary variables won't be confused with others we are working with, their names begin and end with two periods. (This is because we might already have a variable called count or prop in our dataset.) So our calls to it from the aes() function will generically look like this: <mapping> = <..statistic..>. In this case, we want y to use the calculated proportion, so we say aes(y = ..prop..).*
+
+```{r incorrect proportion}
+p <- ggplot(data = gss_sm,
+            mapping = aes(x = bigregion))
+
+p + geom_bar(mapping = aes(y = ..prop..))
+
+```
+The resulting plot is still not right. We no longer have a count on the y-axis, but the proportions of the bars all have a value of 1, so all the bars are the same height.
+This is a grouping issue again. In this case, we need to tell ggplot to ignore the x-categories when calculating denominator of the proportion, and use the total number observations instead. To do so we specify group = 1 inside the aes() call. The value of 1 is just a kind of "dummy group" that tells ggplot to use the whole dataset when establishing the denominator for its prop calculations.
+
+```{r bar chart with correct proportion}
+p <- ggplot(data = gss_sm,
+            mapping = aes(x = bigregion))
+p + geom_bar(mapping = aes( y = ..prop.., group = 1))
+
+```
+
+*making table from a categorical variable*
+
+```{r making table for categorical variable}
+table(gss_sm$religion)
+```
+We can make a bar plot for religion (categorical variable) with color and fill
+
+```{r bar plot with color}
+p<- ggplot(data = gss_sm,
+           mapping = aes(religion, color = religion)) 
+p + geom_bar()
+
+```
+
+```{r bar plot with fill}
+p<- ggplot(data = gss_sm,
+           mapping = aes(religion)) 
+p + geom_bar(mapping = aes(x = religion, fill = religion))
+
+#since legends are redundant, we can remove them. 
+p + geom_bar(mapping = aes(x = religion, fill = religion)) +
+    guides(fill = F) #use guides fn to remove legend, F means remove legends
+
+```
+
+
+#Frequency plots the slightly awkward way#
+
+
+
