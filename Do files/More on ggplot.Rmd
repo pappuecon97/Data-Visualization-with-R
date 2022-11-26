@@ -2,7 +2,9 @@
 title: "More on ggplot"
 author: "Md Johirul Islam"
 date: "2/28/2022"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 **Grouped data and the group aesthetic**
@@ -47,7 +49,7 @@ p<- ggplot(data = gapminder,
 p + geom_line(aes(group = country)) + facet_wrap(~ continent)
 
 ```
-*We can also use the ncol argument to facet_wrap() to control the number of columns used to lay out the facets. Because we have only five continents it might be worth seeing if we can fit them on a single row (which means we’ll have five columns)*
+*We can also use the ncol argument to facet_wrap() to control the number of columns used to lay out the facets. Because we have only five continents it might be worth seeing if we can fit them on a single row (which means we will have five columns)*
 
 So, full figure is as follows: 
 
@@ -156,6 +158,205 @@ p + geom_bar(mapping = aes(x = religion, fill = religion)) +
 
 
 #Frequency plots the slightly awkward way#
+
+*cross-classify two categorical variables. W do it by ataked barplot*
+
+This is the graphical equivalent of a frequency table of counts or proportions. 
+Using the GSS data, for instance, we might want to examine the distribution of 
+religious preferences within different regions of the United States.
+
+```{r staked bar plot for cross-category}
+p<- ggplot(data = gss_sm,
+           mapping = aes(x = bigregion,
+                         fill = religion))
+p + geom_bar()
+
+```
+
+Now, we plot staked barplot with relative frequency
+```{r staked barplot with frequency}
+p<- ggplot(data = gss_sm,
+           mapping = aes(x = bigregion,
+                         fill  = religion))
+p + geom_bar(position = "fill")
+
+```
+**A first go at a dodged bar chart with proportional bars**
+
+```{r dodged bar 1st try}
+p <- ggplot(data = gss_sm,
+            mapping = aes(x = bigregion,
+                          fill = religion))
+p + geom_bar(position = "dodge",
+             mapping = aes(y = ..prop.. )) # to make y-axis as proportion
+
+```
+
+there seems to be an issue with the grouping. When we just wanted the overall
+proportions for one variable, we mapped group = 1 to tell ggplot to calculate 
+the proportions with respect to the overall N. In this case our grouping 
+variable is religion, so we might try mapping that to the group aesthetic.
+
+```{r dodged bar with grouping}
+p <- ggplot(data = gss_sm,
+            mapping = aes(x = bigregion, fill = religion))
+p + geom_bar(position = "dodge",
+             mapping = aes(y = ..prop.., group = religion))
+
+```
+**Faceting proportions within region.**
+We can plot different region in different panels bby faceting the plot.
+
+```{r faceting barplot}
+p <- ggplot(data = gss_sm,
+            mapping = aes(x = religion))
+
+p + geom_bar(position = "dodge",
+             mapping = aes(y = ..prop.., group = bigregion))  + 
+    facet_wrap(~ bigregion, ncol = 2) #make it as four diff plot
+
+```
+
+
+#Histograms and density plots.#
+
+A histogram is a way of summarizing a continuous variable by chopping it up 
+into segments or "bins" and counting how many observations are found within each 
+bin. Because we are summarizing a continuous variable using a series of bars,
+we need to divide the observations into groups, or bins, and count how many are
+in each one. By default, the geom_histogram() function will choose a bin size 
+for us based on a rule of thumb.
+
+```{r histograms with default bin size}
+p <- ggplot(data = midwest,
+              mapping = aes(x = area))
+
+p + geom_histogram()
+
+```
+
+```{r histogram with custom bin size}
+p <- ggplot(data = midwest,
+              mapping = aes(x = area))
+p + geom_histogram(bins = 10)
+
+```
+
+While histograms summarize single variables, it's also possible to use several
+at once to compare distributions. We can facet histograms by some variable of 
+interest, or as here we can compare them in the same plot using the fill mapping.
+
+```{r two histogram in one plot}
+oh_wi <- c("OH", "WI")
+
+p <- ggplot(data = subset(midwest, subset = state %in% oh_wi), #to subset data
+            mapping = aes(x = percollege, fill = state))
+p + geom_histogram(alpha = 0.4, bins = 20)
+
+```
+*We subset the data here to pick out just two states. To do this we create a* 
+*character vector with just two elements, "OH" and "WI". Then we use the*
+*subset() function to take our data and filter it so that we only select*
+*rows whose state name is in this vector. The %in% operator is a convenient* 
+*way to filter on more than one term in a variable when using subset().*
+
+
+**Kernel Density Plot**
+
+We draw Density plot by 'geom_density' fn. 
+```{r Kernel Density Plot}
+p <- ggplot(data = midwest,
+            mapping = aes(x = area))
+p + geom_density()
+
+```
+
+We can use color and fill for this plot to compare more than one distributions. 
+
+```{r more than one density plot }
+p <- ggplot(data = midwest,
+            mapping = aes(x = area,
+                          fill = state,
+                          color = state))
+p + geom_density(alpha = 0.3)
+
+```
+
+If you want to make the baselines of the density curves go away, you can use geom_line(stat = "density") instead.
+
+```{r without baseline density curves}
+p <- ggplot(data = midwest,
+              mapping = aes(x = area,
+                            fill = state,
+                            color = state))
+p + geom_line(stat = "density")
+
+```
+
+
+Just like geom_bar(), the count-based defaults computed by the stat_ functions 
+used by geom_histogram() and geom_density() will return proportional measures 
+if we ask them. For geom_density(), the stat_density() function can return its 
+default ..density.. statistic, or ..scaled.., which will give a proportional 
+density estimate. It can also return a statistic called ..count.., which is 
+the density times the number of points. This can be used in stacked density plots.
+
+```{r scaled density}
+p <- ggplot(data = subset(midwest, subset = state %in% oh_wi),
+            mapping = aes(x = area, fill = state, color = state))
+p + geom_density(alpha = 0.3, mapping = (aes(y = ..scaled..)))  #scaled density
+
+```
+
+
+###Avoid transformations when necessary###
+
+When possible, we avoid transformation bcz sometimes our data is already in 
+summary table. Let's consider the codes below. we do not need the services of any stat_ functions that geom_bar() would normally call. We can tell geom_bar() not to do any work on the variable before plotting it. To do this we say stat = 'identity' in the geom_bar() call. We'll also move the legend to the top of the chart.
+
+```{r no transformation}
+#load data
+titanic
+
+p <- ggplot(data = titanic,
+            mapping = aes(x = fate, y = percent, fill = sex)) #make fill by sex
+
+p+ geom_bar(position = "dodge", stat = "identity")  + #don't transform data to table 
+            theme(legend.position = "top")   #make legend on the top of fig
+
+```
+
+For convenience ggplot also provides a related geom, geom_col(), which has exactly the same effect but assumes that stat = "identity". We will use this form in future when we don't need any calculations done on the plot. 
+
+
+###Bar chart to compare groups for a threshold.###
+
+
+This allows us to do things like, for example, plot a flow of positive and negative values in a bar chart. This sort of graph is an alternative to a line plot and is often seen in public policy settings where changes relative to some threshold level or baseline are of interest. For example, the oecd_sum table in socviz contains information on average life expectancy at birth within the United States, and across other OECD countries. We will plot the difference over time, and use the hi_lo variable to color the columns in the chart. 
+
+```{r Using geom_col() to plot negative and positive values in a bar chart}
+
+#load data
+oecd_sum
+
+p <- ggplot(data = oecd_sum,
+            mapping = aes(x = year, y = diff, fill = hi_lo ))
+p+ geom_col() + guides(fill = F) + #tells ggplot to drop the unnecessary legend
+      labs(x = NULL, y = "Difference in years",
+          title = "Life expectancy of US", 
+          subtitle = "Difference between US and OECD in life expectancy",
+          caption = "Data: OECD")
+
+``` 
+
+
+
+
+
+
+
+
+
 
 
 
